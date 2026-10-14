@@ -1,0 +1,4 @@
+﻿# Template only; do not store credentials here.
+service: notification
+# grpc_addr: ":TODO"
+# environment_prefix: MINIMALL_NOTIFICATION

@@ -1,0 +1,25 @@
+﻿# Build outputs
+bin/
+dist/
+coverage.out
+*.test
+
+# Go workspace
+/go.work
+/go.work.sum
+
+# Editor / OS
+.vscode/*.local.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Generated protobuf output (choose commit-or-generate policy before enabling)
+api/gen/

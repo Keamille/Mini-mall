@@ -1,0 +1,3 @@
+﻿version: v2
+plugins: []
+# TODO: Add go and go-grpc plugins after the proto contract is defined.

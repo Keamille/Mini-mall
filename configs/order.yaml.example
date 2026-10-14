@@ -1,0 +1,4 @@
+﻿# Template only; do not store credentials here.
+service: order
+# grpc_addr: ":TODO"
+# environment_prefix: MINIMALL_ORDER

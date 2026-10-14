@@ -1,0 +1,3 @@
+﻿version: v1
+name: buf.build/your-org/go-minimall
+# TODO: Update the Buf module name when the repository namespace is known.

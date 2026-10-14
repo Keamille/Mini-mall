@@ -1,0 +1,11 @@
+﻿name: minimall
+
+# Scaffold only: intentionally contains no runnable application containers.
+# Add infrastructure and service definitions while implementing M0/M1.
+# Canonical names, ports, dependencies and profiles are documented in:
+# ../docs/10-deployment.md and ../docs/14-port-matrix.md
+services: {}
+
+networks:
+  minimall_net:
+    name: minimall_net
