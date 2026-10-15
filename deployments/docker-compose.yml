@@ -1,11 +1,33 @@
-﻿name: minimall
+name: minimall
 
-# Scaffold only: intentionally contains no runnable application containers.
-# Add infrastructure and service definitions while implementing M0/M1.
-# Canonical names, ports, dependencies and profiles are documented in:
-# ../docs/10-deployment.md and ../docs/14-port-matrix.md
-services: {}
+# 做法 B：数据落在命名卷 mysql_data，平时 restart/up 不丢数据。
+# 需要清空测试数据时执行：
+#   docker compose -f deployments/docker-compose.yml down -v
+#   docker compose -f deployments/docker-compose.yml up -d mysql
+# 服务名/端口见 docs/10-deployment.md、docs/14-port-matrix.md
+services:
+  mysql:
+    image: mysql:8.4
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      MYSQL_DATABASE: minimall_user
+      MYSQL_USER: minimall
+      MYSQL_PASSWORD: "123456"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p123456"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+volumes:
+  mysql_data:
 
 networks:
-  minimall_net:
+  default:
     name: minimall_net

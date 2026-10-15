@@ -1,9 +1,9 @@
-﻿# inventory Proto Contract
+# inventory Proto 契约
 
-Place versioned protobuf definitions for the **inventory** domain in this directory.
+在此目录放置 **inventory** 域的版本化 protobuf 定义。
 
-- Package convention: `minimall.inventory.v1`
-- Generated output target: `api/gen/` (not created until code generation is configured)
-- Keep cross-service DTOs in their owning domain; shared pagination and empty messages belong in `common/v1`.
+- 包名约定：`minimall.inventory.v1`
+- 生成代码目标目录：`api/gen/`（配置代码生成前可不创建）
+- 跨服务 DTO 放在所属域；分页、空消息等公共类型放在 `common/v1`
 
-See [API conventions](../../../docs/07-api-conventions.md).
+详见 [API 约定](../../../docs/07-api-conventions.md)。

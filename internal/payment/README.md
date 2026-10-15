@@ -1,14 +1,14 @@
-﻿# internal/payment
+# internal/payment
 
-Private implementation area for **payment**. No other service may import this directory.
+**payment** 的私有实现目录。其他服务不得 import 本目录。
 
-| Directory | Intended contents |
+| 目录 | 用途 |
 |---|---|
-| `app/` | Application use cases and orchestration |
-| `domain/` | Entities, value objects, domain errors |
-| `port/` | Repository, RPC client, publisher interfaces |
-| `adapter/` | gRPC/HTTP, MySQL and NATS implementations |
-| `config/` | Service configuration mapping |
-| `server/` | Dependency assembly and lifecycle wiring |
+| `app/` | 应用用例与编排 |
+| `domain/` | 实体、值对象、领域错误 |
+| `port/` | 仓储、RPC 客户端、发布者等出站接口 |
+| `adapter/` | gRPC/HTTP、MySQL、NATS 等适配实现 |
+| `config/` | 服务配置映射 |
+| `server/` | 依赖组装与生命周期 |
 
-Do not add business logic until the relevant proto, migration, and service contract are agreed.
+在对应 proto、迁移与服务规格对齐前，不要写入业务逻辑。

@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS skus;
+DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS categories;

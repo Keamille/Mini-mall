@@ -1,5 +1,4 @@
-﻿name: minimall-observability
+name: minimall-observability
 
-# Scaffold only. Add prometheus, grafana, loki, tempo and otel-collector
-# definitions while implementing the observability milestone.
+# 仅骨架。实现可观测里程碑时，再补充 prometheus、grafana、loki、tempo、otel-collector 等定义。
 services: {}

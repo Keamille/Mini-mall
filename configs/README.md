@@ -1,5 +1,5 @@
-﻿# Local configuration templates
+# 本地配置模板
 
-Each service reads `MINIMALL_<SERVICE>_*` environment variables. These files are non-secret examples only; runtime secrets belong in `.env` or a secret manager.
+各服务通过 `MINIMALL_<SERVICE>_*` 环境变量读取配置。本目录仅为非敏感示例；运行时密钥请放在 `.env` 或密钥管理系统中。
 
-See `deployments/.env.example` and [deployment documentation](../docs/10-deployment.md).
+参见 `deployments/.env.example` 与 [部署文档](../docs/10-deployment.md)。

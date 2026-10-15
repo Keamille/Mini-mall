@@ -1,4 +1,4 @@
-﻿# Build outputs
+# 构建产物
 bin/
 dist/
 coverage.out
@@ -8,18 +8,18 @@ coverage.out
 /go.work
 /go.work.sum
 
-# Editor / OS
+# 编辑器 / 操作系统
 .vscode/*.local.json
 .idea/
 .DS_Store
 Thumbs.db
 
-# Secrets
+# 密钥与本地环境
 .env
 .env.*
 !.env.example
 *.pem
 *.key
 
-# Generated protobuf output (choose commit-or-generate policy before enabling)
+# Protobuf 生成目录（提交或 CI 生成二选一后再启用忽略策略）
 api/gen/

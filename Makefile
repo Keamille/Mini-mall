@@ -1,19 +1,19 @@
-﻿.PHONY: help proto migrate-up test docker-up docker-down
+.PHONY: help proto migrate-up test docker-up docker-down
 
 help:
-	@echo "Project scaffold only. Implement scripts before running targets."
+	@echo "当前仅为项目骨架，请先实现脚本后再使用下列目标。"
 
 proto:
-	@echo "TODO: generate protobuf code"
+	@echo "待实现：生成 protobuf 代码"
 
 migrate-up:
-	@echo "TODO: run database migrations"
+	@echo "待实现：执行数据库迁移"
 
 test:
-	@echo "TODO: run tests"
+	@echo "待实现：运行测试"
 
 docker-up:
-	@echo "TODO: start Docker Compose services"
+	@echo "待实现：启动 Docker Compose 服务"
 
 docker-down:
-	@echo "TODO: stop Docker Compose services"
+	@echo "待实现：停止 Docker Compose 服务"

@@ -1,4 +1,4 @@
-﻿# Template only; do not store credentials here.
+# 仅作模板；请勿在此存放真实凭证。
 service: product
-# grpc_addr: ":TODO"
+# grpc_addr: ":待填写"
 # environment_prefix: MINIMALL_PRODUCT

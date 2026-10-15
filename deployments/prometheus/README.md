@@ -1,3 +1,3 @@
-﻿# Prometheus templates
+# Prometheus 模板
 
-Add `prometheus.yml`, recording rules and alert rules when M4 observability is implemented.
+实现 M4 可观测时，在此添加 `prometheus.yml`、记录规则与告警规则。

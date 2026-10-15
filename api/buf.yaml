@@ -1,3 +1,3 @@
-﻿version: v1
+version: v1
 name: buf.build/your-org/go-minimall
-# TODO: Update the Buf module name when the repository namespace is known.
+# TODO: 仓库命名空间确定后，更新 Buf 模块名。

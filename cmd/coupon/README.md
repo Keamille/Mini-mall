@@ -1,7 +1,7 @@
-﻿# cmd/coupon
+# cmd/coupon
 
-Service entrypoint template for **coupon**.
+**coupon** 服务的启动入口模板。
 
-Copy `main.go.tmpl` to `main.go` only when implementing this service. The entrypoint should only load configuration, initialize observability, assemble dependencies, start transports/consumers, and handle graceful shutdown.
+实现本服务时，将 `main.go.tmpl` 复制为 `main.go`。入口只负责：加载配置、初始化可观测性、组装依赖、启动传输层/消费者，以及优雅退出。
 
-Service contract: [docs/06-services/coupon.md](../../docs/06-services/coupon.md)
+服务规格：[docs/06-services/coupon.md](../../docs/06-services/coupon.md)

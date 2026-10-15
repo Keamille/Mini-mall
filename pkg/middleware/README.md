@@ -1,3 +1,3 @@
-﻿# pkg/middleware
+# pkg/middleware
 
-Shared, infrastructure-only package placeholder. Do not put domain-specific models or service repositories here.
+跨服务复用的基础设施占位包。请勿在此放入领域模型或某服务专属仓储。

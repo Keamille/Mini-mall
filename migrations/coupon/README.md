@@ -1,5 +1,5 @@
-﻿# coupon migrations
+# coupon 迁移
 
-Place ordered SQL migration files here, e.g. `000001_initial.up.sql` and `000001_initial.down.sql`.
+在此放置有序 SQL 迁移文件，例如 `000001_initial.up.sql` 与 `000001_initial.down.sql`。
 
-Database ownership: `minimall_coupon`.
+所属数据库：`minimall_coupon`。

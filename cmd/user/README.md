@@ -1,7 +1,9 @@
-﻿# cmd/user
+# cmd/user
 
-Service entrypoint template for **user**.
+**user** 服务入口：HTTP `:8081`，库 `minimall_user`。
 
-Copy `main.go.tmpl` to `main.go` only when implementing this service. The entrypoint should only load configuration, initialize observability, assemble dependencies, start transports/consumers, and handle graceful shutdown.
+```bash
+go run ./cmd/user
+```
 
-Service contract: [docs/06-services/user.md](../../docs/06-services/user.md)
+服务规格：[docs/06-services/user.md](../../docs/06-services/user.md)
