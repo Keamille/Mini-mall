@@ -1,7 +1,11 @@
 ﻿# cmd/gateway
 
-Service entrypoint template for **gateway**.
+**gateway** 入口：HTTP `:8080`，反代 user / product 并做 JWT 鉴权。
 
-Copy `main.go.tmpl` to `main.go` only when implementing this service. The entrypoint should only load configuration, initialize observability, assemble dependencies, start transports/consumers, and handle graceful shutdown.
+```bash
+go run ./cmd/gateway
+```
 
-Service contract: [docs/06-services/gateway.md](../../docs/06-services/gateway.md)
+验收：`powershell -File scripts/accept-gateway.ps1`（需 user、product 已启动）。
+
+规格：[docs/06-services/gateway.md](../../docs/06-services/gateway.md)
