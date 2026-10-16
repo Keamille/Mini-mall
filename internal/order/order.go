@@ -79,3 +79,27 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 		},
 	})
 }
+
+func (h *Handler) CancelOrder(c *gin.Context) {
+	userID := c.GetString("user_id")
+	id := c.Param("id")
+	o, err := h.findOrderByID(id, userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"code": 15001, "message": "order not found"})
+		return
+	}
+	if o.Status != 10 {
+		c.JSON(http.StatusConflict, gin.H{"code": 15002, "message": "order cannot be cancelled"})
+		return
+	}
+	if err := release(id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 10007, "message": "failed to release stock"})
+		return
+	}
+	ok, err := h.markCancelled(id, userID)
+	if err != nil || !ok {
+		c.JSON(http.StatusConflict, gin.H{"code": 15002, "message": "order cannot be cancelled"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 0, "message": "success", "data": gin.H{"id": id, "status": 30}})
+}

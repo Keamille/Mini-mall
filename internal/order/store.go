@@ -79,3 +79,26 @@ func (h *Handler) insertOrderTx(o orderRow, items []itemRow) error {
 		return nil
 	})
 }
+
+func (h *Handler) findOrderByID(id string,userID string) (orderRow, error) {
+	var o orderRow
+	err := h.DB.Get(&o, `
+		SELECT id, order_no, user_id, status, pay_amount_cent, item_amount_cent, reservation_id, idempotency_key
+		FROM orders WHERE id = ? AND user_id = ?`, id, userID)
+	return o, err
+}
+
+func (h *Handler) markCancelled(id string,userID string) (bool, error) {
+	res,err := h.DB.Exec(`
+		UPDATE orders
+		SET status = 30, cancelled_at = UTC_TIMESTAMP(3)
+		WHERE id = ? AND user_id = ? AND status = 10`, id, userID)
+	if err != nil {
+		return false, err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return rows > 0, nil
+}

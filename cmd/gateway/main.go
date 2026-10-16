@@ -58,6 +58,7 @@ func main() {
 
 	// 需登录：订单
 	api.POST("/orders", auth, toOrder)
+	api.POST("/orders/:id/cancel", auth, toOrder)
 
 	// 需登录：商品写（学习阶段当 admin）
 	api.POST("/categories", auth, toProduct)
