@@ -40,6 +40,7 @@ func main() {
 	r.GET("/api/v1/inventories/:sku_id", h.GetStock)
 	r.POST("/api/v1/inventories/reserve", h.Reserve)
 	r.POST("/api/v1/inventories/release", h.Release)
+	r.POST("/api/v1/inventories/commit", h.Commit)
 	log.Println("inventory on :8088")
 	if err := r.Run(":8088"); err != nil {
 		log.Fatal(err)

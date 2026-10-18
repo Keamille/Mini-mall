@@ -3,10 +3,13 @@ package order
 import (
 	"database/sql"
 	"fmt"
-
+	"errors"
 	"github.com/jmoiron/sqlx"
 )
 
+var ErrInsufficientStock = errors.New("insufficient stock")
+var	ErrReservationNotFound  = errors.New("reservation not found")
+var	ErrReservationCommitted = errors.New("reservation already committed")
 type itemRow struct {
 	SkuID      string `json:"sku_id"`
 	ProductID  string `json:"product_id"`
@@ -80,7 +83,7 @@ func (h *Handler) insertOrderTx(o orderRow, items []itemRow) error {
 	})
 }
 
-func (h *Handler) findOrderByID(id string,userID string) (orderRow, error) {
+func (h *Handler) findOrderByID(id string, userID string) (orderRow, error) {
 	var o orderRow
 	err := h.DB.Get(&o, `
 		SELECT id, order_no, user_id, status, pay_amount_cent, item_amount_cent, reservation_id, idempotency_key
@@ -88,8 +91,8 @@ func (h *Handler) findOrderByID(id string,userID string) (orderRow, error) {
 	return o, err
 }
 
-func (h *Handler) markCancelled(id string,userID string) (bool, error) {
-	res,err := h.DB.Exec(`
+func (h *Handler) markCancelled(id string, userID string) (bool, error) {
+	res, err := h.DB.Exec(`
 		UPDATE orders
 		SET status = 30, cancelled_at = UTC_TIMESTAMP(3)
 		WHERE id = ? AND user_id = ? AND status = 10`, id, userID)
@@ -101,4 +104,23 @@ func (h *Handler) markCancelled(id string,userID string) (bool, error) {
 		return false, err
 	}
 	return rows > 0, nil
+}
+
+func (h *Handler) findOrder(id string) (orderRow, error) {
+	var o orderRow
+	err := h.DB.Get(&o, `
+		SELECT id, order_no, user_id, status, pay_amount_cent, item_amount_cent, reservation_id, idempotency_key
+		FROM orders WHERE id = ?`, id)
+	return o, err
+}
+
+func (h *Handler) markPaid(id string) (bool, error) {
+	res, err := h.DB.Exec(`
+		UPDATE orders SET status = 20, paid_at = UTC_TIMESTAMP(3)
+		WHERE id = ? AND status = 10`, id)
+	if err != nil {
+		return false, err
+	}
+	n, _ := res.RowsAffected()
+	return n == 1, nil
 }

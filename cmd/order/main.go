@@ -30,8 +30,10 @@ func main() {
 	auth := order.AuthRequired()
 	h := order.NewHandler(db)
 
+
 	r.POST("/api/v1/orders", auth, h.CreateOrder)
 	r.POST("/api/v1/orders/:id/cancel", auth, h.CancelOrder)
+	r.POST("/api/v1/orders/:id/paid", h.MarkPaid)
 	log.Println("order on :8089")
 	if err:= r.Run(":8089"); err != nil {
 		log.Fatal(err)

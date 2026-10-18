@@ -70,3 +70,27 @@ func (h *Handler) Release(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "message": "success"})
 }
+
+func (h *Handler) Commit(c *gin.Context) {
+	var req struct {
+		OrderID string `json:"order_id" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": 10001, "message": "invalid request"})
+		return
+	}
+	err := h.commitTx(req.OrderID)
+	if errors.Is(err, ErrReservationNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"code": 13002, "message": "reservation not found"})
+		return
+	}
+	if errors.Is(err, ErrReservationCommitted) {
+		c.JSON(http.StatusBadRequest, gin.H{"code": 13003, "message": "reservation already committed"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 10007, "message": "failed to commit"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 0, "message": "success"})
+}

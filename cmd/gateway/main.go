@@ -17,6 +17,7 @@ func main() {
 	userURL := "http://127.0.0.1:8081"
 	productURL := "http://127.0.0.1:8082"
 	cartURL := "http://127.0.0.1:8083"
+	paymentURL := "http://127.0.0.1:8085"
 	inventoryURL := "http://127.0.0.1:8088"
 	orderURL := "http://127.0.0.1:8089"
 	toCart := gateway.ReverseProxy(cartURL)
@@ -24,6 +25,8 @@ func main() {
 	toOrder := gateway.ReverseProxy(orderURL)
 	toUser := gateway.ReverseProxy(userURL)
 	toProduct := gateway.ReverseProxy(productURL)
+	toPayment := gateway.ReverseProxy(paymentURL)
+	
 	auth := gateway.AuthRequired()
 
 	api := r.Group("/api/v1")
@@ -55,11 +58,14 @@ func main() {
 	api.POST("/inventories", auth, toInventory)
 	api.POST("/inventories/reserve", auth, toInventory)
 	api.POST("/inventories/release", auth, toInventory)
+	api.POST("/inventories/commit", auth, toInventory)
 
 	// 需登录：订单
 	api.POST("/orders", auth, toOrder)
 	api.POST("/orders/:id/cancel", auth, toOrder)
-
+	// 需登录：支付
+	api.POST("/payments", auth, toPayment)
+	api.POST("/payments/:id/mock-confirm", auth, toPayment)
 	// 需登录：商品写（学习阶段当 admin）
 	api.POST("/categories", auth, toProduct)
 	api.POST("/products", auth, toProduct)

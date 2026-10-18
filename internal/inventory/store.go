@@ -167,3 +167,53 @@ func (h *Handler) releaseTx(orderID string) error {
 		return err
 	})
 }
+
+func (h *Handler) commitTx(orderID string) error {
+	return h.withTx(func(tx *sqlx.Tx) error {
+		var row struct {
+			ID     string `db:"id"`
+			Status int8   `db:"status"`
+		}
+		err := tx.Get(&row, `SELECT id, status FROM stock_reservations WHERE order_id = ?`, orderID)
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrReservationNotFound
+		}
+		if err != nil {
+			return err
+		}
+		if row.Status == 2 {
+			return nil
+		}
+		if row.Status != 1 {
+			return ErrReservationCommitted
+		}
+
+		var items []reserveItem
+		if err := tx.Select(&items, `
+			SELECT sku_id, quantity
+			FROM stock_reservation_items WHERE reservation_id = ?`, row.ID); err != nil {
+			return err
+		}
+		for _, it := range items {
+			var version int
+			if err := tx.Get(&version, `SELECT version FROM stocks WHERE sku_id = ?`, it.SkuID); err != nil {
+				return err
+			}
+			res, err := tx.Exec(`
+				UPDATE stocks
+				SET reserved = reserved - ?, version = version + 1
+				WHERE sku_id = ? AND version = ? AND reserved >= ?`,
+				it.Quantity, it.SkuID, version, it.Quantity,
+			)
+			if err != nil {
+				return err
+			}
+			n, _ := res.RowsAffected()
+			if n == 0 {
+				return fmt.Errorf("commit stock failed for sku %s", it.SkuID)
+			}
+		}
+		_, err = tx.Exec(`UPDATE stock_reservations SET status = 2 WHERE id = ? AND status = 1`, row.ID)
+		return err
+	})
+}

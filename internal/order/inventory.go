@@ -3,6 +3,7 @@ package order
 import (
 	"bytes"
 	"encoding/json"
+
 	"net/http"
 )
 
@@ -36,6 +37,18 @@ func release(orderID string) error {
 	body := map[string]any{"order_id": orderID}
 	raw, _ := json.Marshal(body)
 	resp, err := http.Post("http://127.0.0.1:8088/api/v1/inventories/release", "application/json", bytes.NewReader(raw))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+func commitStock(orderID string) error {
+	body := map[string]any{"order_id": orderID}
+	raw, _ := json.Marshal(body)
+	resp, err := http.Post("http://127.0.0.1:8088/api/v1/inventories/commit", "application/json", bytes.NewReader(raw))
 	if err != nil {
 		return err
 	}
