@@ -18,6 +18,9 @@ func main() {
 	productURL := "http://127.0.0.1:8082"
 	cartURL := "http://127.0.0.1:8083"
 	paymentURL := "http://127.0.0.1:8085"
+	searchURL := "http://127.0.0.1:8084"
+	couponURL := "http://127.0.0.1:8086"
+	notificationURL := "http://127.0.0.1:8087"
 	inventoryURL := "http://127.0.0.1:8088"
 	orderURL := "http://127.0.0.1:8089"
 	toCart := gateway.ReverseProxy(cartURL)
@@ -26,7 +29,10 @@ func main() {
 	toUser := gateway.ReverseProxy(userURL)
 	toProduct := gateway.ReverseProxy(productURL)
 	toPayment := gateway.ReverseProxy(paymentURL)
-	
+	toCoupon := gateway.ReverseProxy(couponURL)
+	toSearch := gateway.ReverseProxy(searchURL)
+	toNotification := gateway.ReverseProxy(notificationURL)
+
 	auth := gateway.AuthRequired()
 
 	api := r.Group("/api/v1")
@@ -36,7 +42,8 @@ func main() {
 	api.POST("/auth/login", toUser)
 	api.POST("/auth/refresh", toUser)
 
-	// 公开：商品读
+	// 公开：商品读、搜索
+	api.GET("/search/products", toSearch)
 	api.GET("/categories", toProduct)
 	api.GET("/products", toProduct)
 	api.GET("/products/:id", toProduct)
@@ -66,6 +73,17 @@ func main() {
 	// 需登录：支付
 	api.POST("/payments", auth, toPayment)
 	api.POST("/payments/:id/mock-confirm", auth, toPayment)
+
+	// 优惠券：模板公开读；领取、我的券、试算要登录。锁定/解锁/核销只给订单服务直连 :8086。
+	api.GET("/coupons/templates", toCoupon)
+	api.POST("/coupons/templates", auth, toCoupon)
+	api.POST("/coupons/templates/:id/claim", auth, toCoupon)
+	api.GET("/coupons/mine", auth, toCoupon)
+	api.POST("/coupons/quote", auth, toCoupon)
+
+	// 站内信。写入只给订单服务直连 :8087。
+	api.GET("/notifications/mine", auth, toNotification)
+	api.POST("/notifications/:id/read", auth, toNotification)
 	// 需登录：商品写（学习阶段当 admin）
 	api.POST("/categories", auth, toProduct)
 	api.POST("/products", auth, toProduct)

@@ -47,5 +47,8 @@ func (h *Handler) CreateSku(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 10007, "message": "failed to create sku"})
 		return
 	}
+	if p, err := h.findProductByID(productID); err == nil {
+		h.indexProduct(p)
+	}
 	c.JSON(http.StatusCreated, gin.H{"code": 0, "message": "success", "data": row})
 }

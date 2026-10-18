@@ -19,11 +19,15 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 		return
 	}
 	if existing, err := h.findByIdempotency(userID, key); err == nil {
+		notifyOrder("order_created", existing.ID, existing.UserID, map[string]any{
+			"pay_amount_cent": existing.PayAmountCent,
+		})
 		c.JSON(200, gin.H{"code": 0, "data": existing})
 		return
 	}
 	var req struct {
-		Items []itemRow `json:"items" binding:"required"`
+		Items        []itemRow `json:"items" binding:"required"`
+		UserCouponID string    `json:"user_coupon_id"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil || len(req.Items) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"code": 10001, "message": "invalid request"})
@@ -41,42 +45,74 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 	items := req.Items
 
 	oderID := NewID()
+	var discount int64
+	if req.UserCouponID != "" {
+		d, status, code, message, err := lockCoupon(userID, req.UserCouponID, oderID, itemAmount)
+		if err != nil || status != http.StatusOK {
+			if status == 0 || err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"code": 10007, "message": "failed to lock coupon"})
+				return
+			}
+			c.JSON(status, gin.H{"code": code, "message": message})
+			return
+		}
+		discount = d
+	}
+	payAmount := itemAmount - discount
+
 	resevationID, statusCode, err := reserve(oderID, items)
 	if statusCode == 409 {
+		if req.UserCouponID != "" {
+			unlockCoupon(userID, req.UserCouponID, oderID)
+		}
 		c.JSON(http.StatusConflict, gin.H{"code": 13001, "message": "insufficient stock"})
 		return
 	}
-	if statusCode != 200 {
+	if statusCode != 200 || err != nil {
+		if req.UserCouponID != "" {
+			unlockCoupon(userID, req.UserCouponID, oderID)
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 10007, "message": "failed to reserve"})
 		return
 	}
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": 10007, "message": "failed to reserve"})
-		return
+	couponID := sql.NullString{}
+	if req.UserCouponID != "" {
+		couponID = sql.NullString{String: req.UserCouponID, Valid: true}
 	}
 	if err := h.insertOrderTx(orderRow{
 		ID:             oderID,
 		OrderNo:        oderID,
 		UserID:         userID,
 		Status:         10,
-		PayAmountCent:  itemAmount,
+		PayAmountCent:  payAmount,
 		ItemAmountCent: itemAmount,
+		DiscountCent:   discount,
+		CouponID:       couponID,
 		ReservationID:  sql.NullString{String: resevationID, Valid: true},
 		IdempotencyKey: key,
 	}, items); err != nil {
 		release(oderID)
+		if req.UserCouponID != "" {
+			unlockCoupon(userID, req.UserCouponID, oderID)
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 10007, "message": "failed to create order"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
 		"code": 0,
 		"data": gin.H{
-			"id":              oderID,
-			"order_no":        oderID,
-			"status":          10,
-			"pay_amount_cent": itemAmount,
-			"reservation_id":  resevationID,
+			"id":               oderID,
+			"order_no":         oderID,
+			"status":           10,
+			"pay_amount_cent":  payAmount,
+			"item_amount_cent": itemAmount,
+			"discount_cent":    discount,
+			"coupon_id":        req.UserCouponID,
+			"reservation_id":   resevationID,
 		},
+	})
+	notifyOrder("order_created", oderID, userID, map[string]any{
+		"pay_amount_cent": payAmount,
 	})
 }
 
@@ -96,12 +132,19 @@ func (h *Handler) CancelOrder(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 10007, "message": "failed to release stock"})
 		return
 	}
+	if o.CouponID.Valid && o.CouponID.String != "" {
+		if err := unlockCoupon(userID, o.CouponID.String, id); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 10007, "message": "failed to unlock coupon"})
+			return
+		}
+	}
 	ok, err := h.markCancelled(id, userID)
 	if err != nil || !ok {
 		c.JSON(http.StatusConflict, gin.H{"code": 15002, "message": "order cannot be cancelled"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "message": "success", "data": gin.H{"id": id, "status": 30}})
+	notifyOrder("order_cancelled", id, userID, nil)
 }
 
 func (h *Handler) MarkPaid(c *gin.Context) {
@@ -112,6 +155,7 @@ func (h *Handler) MarkPaid(c *gin.Context) {
 		return
 	}
 	if o.Status == 20 {
+		notifyOrder("order_paid", id, o.UserID, nil)
 		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"id": id, "status": 20}})
 		return
 	}
@@ -123,9 +167,16 @@ func (h *Handler) MarkPaid(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 10007, "message": "failed to commit stock"})
 		return
 	}
+	if o.CouponID.Valid && o.CouponID.String != "" {
+		if err := confirmCoupon(o.UserID, o.CouponID.String, id); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 10007, "message": "failed to confirm coupon"})
+			return
+		}
+	}
 	if _, err := h.markPaid(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 10007, "message": "failed to mark paid"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"id": id, "status": 20}})
+	notifyOrder("order_paid", id, o.UserID, nil)
 }

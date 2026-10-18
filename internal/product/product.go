@@ -43,6 +43,7 @@ func (h *Handler) CreateProduct(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 10007, "message": "failed to create product"})
 		return
 	}
+	h.indexProduct(row)
 
 	c.JSON(http.StatusCreated, gin.H{"code": 0, "message": "success", "data": row})
 }

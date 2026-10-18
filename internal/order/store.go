@@ -2,14 +2,15 @@ package order
 
 import (
 	"database/sql"
-	"fmt"
 	"errors"
+	"fmt"
 	"github.com/jmoiron/sqlx"
 )
 
 var ErrInsufficientStock = errors.New("insufficient stock")
-var	ErrReservationNotFound  = errors.New("reservation not found")
-var	ErrReservationCommitted = errors.New("reservation already committed")
+var ErrReservationNotFound = errors.New("reservation not found")
+var ErrReservationCommitted = errors.New("reservation already committed")
+
 type itemRow struct {
 	SkuID      string `json:"sku_id"`
 	ProductID  string `json:"product_id"`
@@ -26,6 +27,8 @@ type orderRow struct {
 	Status         int8           `db:"status" json:"status"`
 	PayAmountCent  int64          `db:"pay_amount_cent" json:"pay_amount_cent"`
 	ItemAmountCent int64          `db:"item_amount_cent" json:"item_amount_cent"`
+	DiscountCent   int64          `db:"discount_cent" json:"discount_cent"`
+	CouponID       sql.NullString `db:"coupon_id" json:"coupon_id"`
 	ReservationID  sql.NullString `db:"reservation_id" json:"reservation_id"`
 	IdempotencyKey string         `db:"idempotency_key" json:"idempotency_key"`
 }
@@ -54,7 +57,8 @@ func (h *Handler) withTx(fn func(tx *sqlx.Tx) error) error {
 func (h *Handler) findByIdempotency(userID, key string) (orderRow, error) {
 	var o orderRow
 	err := h.DB.Get(&o, `
-		SELECT id, order_no, user_id, status, pay_amount_cent, item_amount_cent, reservation_id, idempotency_key
+		SELECT id, order_no, user_id, status, pay_amount_cent, item_amount_cent,
+		       discount_cent, coupon_id, reservation_id, idempotency_key
 		FROM orders WHERE user_id = ? AND idempotency_key = ?`, userID, key)
 	return o, err
 }
@@ -63,9 +67,9 @@ func (h *Handler) insertOrderTx(o orderRow, items []itemRow) error {
 	return h.withTx(func(tx *sqlx.Tx) error {
 		if _, err := tx.Exec(`
 			INSERT INTO orders
-			(id, order_no, user_id, status, pay_amount_cent, item_amount_cent, reservation_id, idempotency_key)
-			VALUES (?, ?, ?, 10, ?, ?, ?, ?)`,
-			o.ID, o.OrderNo, o.UserID, o.PayAmountCent, o.ItemAmountCent, o.ReservationID, o.IdempotencyKey,
+			(id, order_no, user_id, status, pay_amount_cent, item_amount_cent, discount_cent, coupon_id, reservation_id, idempotency_key)
+			VALUES (?, ?, ?, 10, ?, ?, ?, ?, ?, ?)`,
+			o.ID, o.OrderNo, o.UserID, o.PayAmountCent, o.ItemAmountCent, o.DiscountCent, o.CouponID, o.ReservationID, o.IdempotencyKey,
 		); err != nil {
 			return err
 		}
@@ -86,7 +90,8 @@ func (h *Handler) insertOrderTx(o orderRow, items []itemRow) error {
 func (h *Handler) findOrderByID(id string, userID string) (orderRow, error) {
 	var o orderRow
 	err := h.DB.Get(&o, `
-		SELECT id, order_no, user_id, status, pay_amount_cent, item_amount_cent, reservation_id, idempotency_key
+		SELECT id, order_no, user_id, status, pay_amount_cent, item_amount_cent,
+		       discount_cent, coupon_id, reservation_id, idempotency_key
 		FROM orders WHERE id = ? AND user_id = ?`, id, userID)
 	return o, err
 }
@@ -109,7 +114,8 @@ func (h *Handler) markCancelled(id string, userID string) (bool, error) {
 func (h *Handler) findOrder(id string) (orderRow, error) {
 	var o orderRow
 	err := h.DB.Get(&o, `
-		SELECT id, order_no, user_id, status, pay_amount_cent, item_amount_cent, reservation_id, idempotency_key
+		SELECT id, order_no, user_id, status, pay_amount_cent, item_amount_cent,
+		       discount_cent, coupon_id, reservation_id, idempotency_key
 		FROM orders WHERE id = ?`, id)
 	return o, err
 }

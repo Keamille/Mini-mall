@@ -13,6 +13,7 @@
 | `07-payment-schema.sql` | `minimall_payment` | payments, payment_refunds |
 | `08-coupon-schema.sql` | `minimall_coupon` | coupon_templates, user_coupons |
 | `09-notification-schema.sql` | `minimall_notification` | notification_logs |
+| `10-search-schema.sql` | `minimall_search` | product_documents |
 
 字段定义对齐 [docs/08-data-models.md](../../../docs/08-data-models.md)；手工 migrate 见 `migrations/<svc>/`。
 

@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS notification_logs (
   payload    JSON         NULL,
   status     TINYINT      NOT NULL DEFAULT 0 COMMENT '0待发 1成功 2失败',
   event_id   VARCHAR(64)  NOT NULL COMMENT '幂等键',
+  read_at    DATETIME(3)  NULL,
   created_at DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
   UNIQUE KEY uk_notification_logs_event (event_id),
