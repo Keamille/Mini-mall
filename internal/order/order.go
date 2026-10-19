@@ -2,10 +2,14 @@ package order
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
+
+var errOrderNotFound = errors.New("order not found")
+var errOrderCannotPay = errors.New("order cannot be paid")
 
 func (h *Handler) CreateOrder(c *gin.Context) {
 	key := c.GetHeader("Idempotency-Key")
@@ -149,34 +153,44 @@ func (h *Handler) CancelOrder(c *gin.Context) {
 
 func (h *Handler) MarkPaid(c *gin.Context) {
 	id := c.Param("id")
-	o, err := h.findOrder(id)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"code": 15001, "message": "order not found"})
-		return
-	}
-	if o.Status == 20 {
-		notifyOrder("order_paid", id, o.UserID, nil)
-		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"id": id, "status": 20}})
-		return
-	}
-	if o.Status != 10 {
-		c.JSON(http.StatusConflict, gin.H{"code": 15002, "message": "order cannot be paid"})
-		return
-	}
-	if err := commitStock(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": 10007, "message": "failed to commit stock"})
-		return
-	}
-	if o.CouponID.Valid && o.CouponID.String != "" {
-		if err := confirmCoupon(o.UserID, o.CouponID.String, id); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"code": 10007, "message": "failed to confirm coupon"})
+	if err := h.applyPaid(id); err != nil {
+		if errors.Is(err, errOrderNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"code": 15001, "message": "order not found"})
 			return
 		}
-	}
-	if _, err := h.markPaid(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": 10007, "message": "failed to mark paid"})
+		if errors.Is(err, errOrderCannotPay) {
+			c.JSON(http.StatusConflict, gin.H{"code": 15002, "message": "order cannot be paid"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 10007, "message": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"id": id, "status": 20}})
+}
+
+func (h *Handler) applyPaid(id string) error {
+	o, err := h.findOrder(id)
+	if err != nil {
+		return errOrderNotFound
+	}
+	if o.Status == 20 {
+		notifyOrder("order_paid", id, o.UserID, nil)
+		return nil
+	}
+	if o.Status != 10 {
+		return errOrderCannotPay
+	}
+	if err := commitStock(id); err != nil {
+		return errors.New("failed to commit stock")
+	}
+	if o.CouponID.Valid && o.CouponID.String != "" {
+		if err := confirmCoupon(o.UserID, o.CouponID.String, id); err != nil {
+			return errors.New("failed to confirm coupon")
+		}
+	}
+	if _, err := h.markPaid(id); err != nil {
+		return errors.New("failed to mark paid")
+	}
 	notifyOrder("order_paid", id, o.UserID, nil)
+	return nil
 }

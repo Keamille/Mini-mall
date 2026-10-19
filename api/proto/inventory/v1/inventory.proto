@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package minimall.inventory.v1;
+
+option go_package = "github.com/your-org/go-minimall/api/gen/inventory/v1;inventoryv1";
+
+message ReserveItem {
+  string sku_id = 1;
+  int32 quantity = 2;
+}
+
+message ReserveStockRequest {
+  string order_id = 1;
+  repeated ReserveItem items = 2;
+}
+
+message ReserveStockResponse {
+  string reservation_id = 1;
+  string order_id = 2;
+}
+
+message ReleaseStockRequest {
+  string order_id = 1;
+}
+
+message ReleaseStockResponse {}
+
+message CommitStockRequest {
+  string order_id = 1;
+}
+
+message CommitStockResponse {}
+
+service InventoryService {
+  rpc ReserveStock(ReserveStockRequest) returns (ReserveStockResponse);
+  rpc ReleaseStock(ReleaseStockRequest) returns (ReleaseStockResponse);
+  rpc CommitStock(CommitStockRequest) returns (CommitStockResponse);
+}

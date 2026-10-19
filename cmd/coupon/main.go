@@ -2,11 +2,14 @@ package main
 
 import (
 	"log"
+	"net"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	couponv1 "github.com/your-org/go-minimall/api/gen/coupon/v1"
 	"github.com/your-org/go-minimall/internal/coupon"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -37,6 +40,19 @@ func main() {
 	r.POST("/api/v1/coupons/lock", h.Lock)
 	r.POST("/api/v1/coupons/unlock", h.Unlock)
 	r.POST("/api/v1/coupons/confirm", h.Confirm)
+
+	lis, err := net.Listen("tcp", ":9006")
+	if err != nil {
+		log.Fatal(err)
+	}
+	gs := grpc.NewServer()
+	couponv1.RegisterCouponServiceServer(gs, coupon.NewGRPCServer(h))
+	go func() {
+		log.Println("coupon grpc on :9006")
+		if err := gs.Serve(lis); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	log.Println("coupon on :8086")
 	if err := r.Run(":8086"); err != nil {

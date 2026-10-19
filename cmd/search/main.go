@@ -2,11 +2,14 @@ package main
 
 import (
 	"log"
+	"net"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	searchv1 "github.com/your-org/go-minimall/api/gen/search/v1"
 	"github.com/your-org/go-minimall/internal/search"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -29,6 +32,19 @@ func main() {
 	h := search.NewHandler(db)
 	r.GET("/api/v1/search/products", h.SearchProducts)
 	r.POST("/api/v1/search/products", h.Upsert)
+
+	lis, err := net.Listen("tcp", ":9007")
+	if err != nil {
+		log.Fatal(err)
+	}
+	gs := grpc.NewServer()
+	searchv1.RegisterSearchServiceServer(gs, search.NewGRPCServer(h))
+	go func() {
+		log.Println("search grpc on :9007")
+		if err := gs.Serve(lis); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	log.Println("search on :8084")
 	if err := r.Run(":8084"); err != nil {

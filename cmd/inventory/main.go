@@ -4,10 +4,15 @@ package main
 import (
 	"log"
 
+	"net"
+
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/your-org/go-minimall/internal/inventory"
+
+	inventoryv1 "github.com/your-org/go-minimall/api/gen/inventory/v1"
+	"google.golang.org/grpc"
 )
 
 // TODO:
@@ -41,6 +46,19 @@ func main() {
 	r.POST("/api/v1/inventories/reserve", h.Reserve)
 	r.POST("/api/v1/inventories/release", h.Release)
 	r.POST("/api/v1/inventories/commit", h.Commit)
+
+	lis, err := net.Listen("tcp", ":9008")
+	if err != nil {
+		log.Fatal(err)
+	}
+	gs := grpc.NewServer()
+	inventoryv1.RegisterInventoryServiceServer(gs, inventory.NewGRPCServer(h))
+	go func() {
+		log.Println("inventory grpc on :9008")
+		if err := gs.Serve(lis); err != nil {
+			log.Fatal(err)
+		}
+	}()
 	log.Println("inventory on :8088")
 	if err := r.Run(":8088"); err != nil {
 		log.Fatal(err)

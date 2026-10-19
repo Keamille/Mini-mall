@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package minimall.order.v1;
+
+option go_package = "github.com/your-org/go-minimall/api/gen/order/v1;orderv1";
+
+message MarkPaidRequest {
+  string order_id = 1;
+}
+
+message MarkPaidResponse {
+  string order_id = 1;
+  int32 status = 2;
+}
+
+service OrderService {
+  rpc MarkPaid(MarkPaidRequest) returns (MarkPaidResponse);
+}

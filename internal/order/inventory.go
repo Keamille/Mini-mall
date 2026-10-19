@@ -1,58 +1,71 @@
 package order
 
 import (
-	"bytes"
-	"encoding/json"
+	"context"
+	"time"
 
-	"net/http"
+	inventoryv1 "github.com/your-org/go-minimall/api/gen/inventory/v1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 func reserve(orderID string, items []itemRow) (string, int, error) {
-	body := map[string]any{"order_id": orderID, "items": []map[string]any{}}
-	list := make([]map[string]any, 0, len(items))
-	for _, it := range items {
-		list = append(list, map[string]any{"sku_id": it.SkuID, "quantity": it.Quantity})
-	}
-	body["items"] = list
-	raw, _ := json.Marshal(body)
-
-	resp, err := http.Post("http://127.0.0.1:8088/api/v1/inventories/reserve", "application/json", bytes.NewReader(raw))
+	client, done, err := inventoryClient()
 	if err != nil {
 		return "", 0, err
 	}
-	defer resp.Body.Close()
-	var out struct {
-		Code int `json:"code"`
-		Data struct {
-			ReservationID string `json:"reservation_id"`
-		} `json:"data"`
+	defer done()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	req := &inventoryv1.ReserveStockRequest{OrderId: orderID}
+	for _, it := range items {
+		req.Items = append(req.Items, &inventoryv1.ReserveItem{
+			SkuId:    it.SkuID,
+			Quantity: int32(it.Quantity),
+		})
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-		return "", resp.StatusCode, err
+	resp, err := client.ReserveStock(ctx, req)
+	if err != nil {
+		if status.Code(err) == codes.FailedPrecondition {
+			return "", 409, nil
+		}
+		return "", 0, err
 	}
-	return out.Data.ReservationID, resp.StatusCode, nil
+	return resp.GetReservationId(), 200, nil
 }
 
 func release(orderID string) error {
-	body := map[string]any{"order_id": orderID}
-	raw, _ := json.Marshal(body)
-	resp, err := http.Post("http://127.0.0.1:8088/api/v1/inventories/release", "application/json", bytes.NewReader(raw))
+	client, done, err := inventoryClient()
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
-
-	return nil
+	defer done()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err = client.ReleaseStock(ctx, &inventoryv1.ReleaseStockRequest{OrderId: orderID})
+	return err
 }
 
 func commitStock(orderID string) error {
-	body := map[string]any{"order_id": orderID}
-	raw, _ := json.Marshal(body)
-	resp, err := http.Post("http://127.0.0.1:8088/api/v1/inventories/commit", "application/json", bytes.NewReader(raw))
+	client, done, err := inventoryClient()
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer done()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err = client.CommitStock(ctx, &inventoryv1.CommitStockRequest{OrderId: orderID})
+	return err
+}
 
-	return nil
+func inventoryClient() (inventoryv1.InventoryServiceClient, func(), error) {
+	conn, err := grpc.NewClient("127.0.0.1:9008", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, nil, err
+	}
+	return inventoryv1.NewInventoryServiceClient(conn), func() { _ = conn.Close() }, nil
 }

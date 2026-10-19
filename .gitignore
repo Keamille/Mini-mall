@@ -3,6 +3,8 @@ bin/
 dist/
 coverage.out
 *.test
+*.exe
+*.exe~
 
 # Go workspace
 /go.work
@@ -14,6 +16,9 @@ coverage.out
 .DS_Store
 Thumbs.db
 
+# 本地笔记（不上传）
+local/
+
 # 密钥与本地环境
 .env
 .env.*
@@ -21,5 +26,4 @@ Thumbs.db
 *.pem
 *.key
 
-# Protobuf 生成目录（提交或 CI 生成二选一后再启用忽略策略）
-api/gen/
+# Protobuf 生成物已提交；改 proto 后运行 scripts/gen-proto.ps1

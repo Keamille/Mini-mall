@@ -1,14 +1,15 @@
 package order
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
 	"log"
-	"net/http"
 	"time"
-)
 
-var notifyClient = &http.Client{Timeout: 2 * time.Second}
+	notificationv1 "github.com/your-org/go-minimall/api/gen/notification/v1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+)
 
 func notifyOrder(eventType, orderID, userID string, payload map[string]any) {
 	if payload == nil {
@@ -16,20 +17,26 @@ func notifyOrder(eventType, orderID, userID string, payload map[string]any) {
 	}
 	payload["order_id"] = orderID
 	payload["user_id"] = userID
-	body := map[string]any{
-		"event_id":   orderID + ":" + eventType,
-		"event_type": eventType,
-		"user_id":    userID,
-		"payload":    payload,
-	}
-	raw, _ := json.Marshal(body)
-	resp, err := notifyClient.Post("http://127.0.0.1:8087/api/v1/notifications/events", "application/json", bytes.NewReader(raw))
+	raw, err := json.Marshal(payload)
 	if err != nil {
 		log.Printf("notify %s %s: %v", eventType, orderID, err)
 		return
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		log.Printf("notify %s %s: status %d", eventType, orderID, resp.StatusCode)
+	conn, err := grpc.NewClient("127.0.0.1:9009", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Printf("notify %s %s: %v", eventType, orderID, err)
+		return
+	}
+	defer conn.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	_, err = notificationv1.NewNotificationServiceClient(conn).RecordEvent(ctx, &notificationv1.RecordEventRequest{
+		EventId:     orderID + ":" + eventType,
+		EventType:   eventType,
+		UserId:      userID,
+		PayloadJson: string(raw),
+	})
+	if err != nil {
+		log.Printf("notify %s %s: %v", eventType, orderID, err)
 	}
 }

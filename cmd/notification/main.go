@@ -2,11 +2,14 @@ package main
 
 import (
 	"log"
+	"net"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	notificationv1 "github.com/your-org/go-minimall/api/gen/notification/v1"
 	"github.com/your-org/go-minimall/internal/notification"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -31,6 +34,19 @@ func main() {
 	r.POST("/api/v1/notifications/events", h.Record)
 	r.GET("/api/v1/notifications/mine", auth, h.ListMine)
 	r.POST("/api/v1/notifications/:id/read", auth, h.MarkRead)
+
+	lis, err := net.Listen("tcp", ":9009")
+	if err != nil {
+		log.Fatal(err)
+	}
+	gs := grpc.NewServer()
+	notificationv1.RegisterNotificationServiceServer(gs, notification.NewGRPCServer(h))
+	go func() {
+		log.Println("notification grpc on :9009")
+		if err := gs.Serve(lis); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	log.Println("notification on :8087")
 	if err := r.Run(":8087"); err != nil {

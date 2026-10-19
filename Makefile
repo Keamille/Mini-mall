@@ -4,7 +4,7 @@ help:
 	@echo "当前仅为项目骨架，请先实现脚本后再使用下列目标。"
 
 proto:
-	@echo "待实现：生成 protobuf 代码"
+	powershell -NoProfile -ExecutionPolicy Bypass -File scripts/gen-proto.ps1
 
 migrate-up:
 	@echo "待实现：执行数据库迁移"

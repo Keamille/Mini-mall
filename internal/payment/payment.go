@@ -1,13 +1,16 @@
 package payment
 
 import (
-	"bytes"
+	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	orderv1 "github.com/your-org/go-minimall/api/gen/order/v1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type CreatePaymentRequest struct {
@@ -77,13 +80,15 @@ func (h *Handler) MockConfirm(c *gin.Context) {
 }
 
 func notifyOrderPaid(orderID string) error {
-	raw, _ := json.Marshal(map[string]any{})
-	resp, err := http.Post("http://127.0.0.1:8089/api/v1/orders/"+orderID+"/paid", "application/json", bytes.NewReader(raw))
+	conn, err := grpc.NewClient("127.0.0.1:9004", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
+	defer conn.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err = orderv1.NewOrderServiceClient(conn).MarkPaid(ctx, &orderv1.MarkPaidRequest{OrderId: orderID})
+	if err != nil {
 		return errors.New("order paid failed")
 	}
 	return nil

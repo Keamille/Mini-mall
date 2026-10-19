@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package minimall.notification.v1;
+
+option go_package = "github.com/your-org/go-minimall/api/gen/notification/v1;notificationv1";
+
+message RecordEventRequest {
+  string event_id = 1;
+  string event_type = 2;
+  string user_id = 3;
+  string payload_json = 4;
+}
+
+message RecordEventResponse {}
+
+service NotificationService {
+  rpc RecordEvent(RecordEventRequest) returns (RecordEventResponse);
+}

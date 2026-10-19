@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package minimall.coupon.v1;
+
+option go_package = "github.com/your-org/go-minimall/api/gen/coupon/v1;couponv1";
+
+message LockCouponRequest {
+  string user_coupon_id = 1;
+  string user_id = 2;
+  string order_id = 3;
+  int64 item_amount_cent = 4;
+}
+
+message LockCouponResponse {
+  int64 discount_cent = 1;
+}
+
+message CouponOrderRequest {
+  string user_coupon_id = 1;
+  string user_id = 2;
+  string order_id = 3;
+}
+
+message CouponOrderResponse {}
+
+service CouponService {
+  rpc LockCoupon(LockCouponRequest) returns (LockCouponResponse);
+  rpc UnlockCoupon(CouponOrderRequest) returns (CouponOrderResponse);
+  rpc ConfirmCoupon(CouponOrderRequest) returns (CouponOrderResponse);
+}

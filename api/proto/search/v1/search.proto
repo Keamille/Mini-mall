@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package minimall.search.v1;
+
+option go_package = "github.com/your-org/go-minimall/api/gen/search/v1;searchv1";
+
+message UpsertProductRequest {
+  string product_id = 1;
+  string category_id = 2;
+  string title = 3;
+  string subtitle = 4;
+  int32 status = 5;
+  int64 min_price_cent = 6;
+}
+
+message UpsertProductResponse {}
+
+service SearchService {
+  rpc UpsertProduct(UpsertProductRequest) returns (UpsertProductResponse);
+}
