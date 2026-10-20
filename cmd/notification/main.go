@@ -7,6 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 	notificationv1 "github.com/your-org/go-minimall/api/gen/notification/v1"
 	"github.com/your-org/go-minimall/internal/notification"
 	"google.golang.org/grpc"
@@ -30,6 +32,21 @@ func main() {
 	})
 
 	h := notification.NewHandler(db)
+
+	nc, err := nats.Connect("nats://127.0.0.1:4222")
+	if err != nil {
+		log.Printf("notification nats disabled: %v", err)
+	} else {
+		js, err := jetstream.New(nc)
+		if err != nil {
+			log.Printf("notification jetstream disabled: %v", err)
+		} else if err := notification.StartOrderCreatedConsumer(h, js); err != nil {
+			log.Printf("notification nats consumer disabled: %v", err)
+		} else {
+			log.Println("notification nats consumer on ORDERS/notify-worker")
+		}
+	}
+
 	auth := notification.AuthRequired()
 	r.POST("/api/v1/notifications/events", h.Record)
 	r.GET("/api/v1/notifications/mine", auth, h.ListMine)

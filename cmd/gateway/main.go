@@ -34,8 +34,10 @@ func main() {
 	toNotification := gateway.ReverseProxy(notificationURL)
 
 	auth := gateway.AuthRequired()
+	rateLimit := gateway.RateLimitFromEnv()
 
 	api := r.Group("/api/v1")
+	api.Use(rateLimit)
 
 	// 公开：auth
 	api.POST("/auth/register", toUser)

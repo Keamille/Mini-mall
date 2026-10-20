@@ -23,9 +23,9 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 		return
 	}
 	if existing, err := h.findByIdempotency(userID, key); err == nil {
-		notifyOrder("order_created", existing.ID, existing.UserID, map[string]any{
-			"pay_amount_cent": existing.PayAmountCent,
-		})
+		payload := map[string]any{"pay_amount_cent": existing.PayAmountCent}
+		notifyOrder("order_created", existing.ID, existing.UserID, payload)
+		h.publishOrderEvent("order_created", existing.ID, existing.UserID, payload)
 		c.JSON(200, gin.H{"code": 0, "data": existing})
 		return
 	}
@@ -102,6 +102,12 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 10007, "message": "failed to create order"})
 		return
 	}
+	notifyOrder("order_created", oderID, userID, map[string]any{
+		"pay_amount_cent": payAmount,
+	})
+	h.publishOrderEvent("order_created", oderID, userID, map[string]any{
+		"pay_amount_cent": payAmount,
+	})
 	c.JSON(http.StatusCreated, gin.H{
 		"code": 0,
 		"data": gin.H{
@@ -115,9 +121,9 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 			"reservation_id":   resevationID,
 		},
 	})
-	notifyOrder("order_created", oderID, userID, map[string]any{
-		"pay_amount_cent": payAmount,
-	})
+	payload := map[string]any{"pay_amount_cent": payAmount}
+	notifyOrder("order_created", oderID, userID, payload)
+	h.publishOrderEvent("order_created", oderID, userID, payload)
 }
 
 func (h *Handler) CancelOrder(c *gin.Context) {
