@@ -17,13 +17,15 @@ CREATE TABLE IF NOT EXISTS orders (
   idempotency_key  VARCHAR(64)  NOT NULL,
   paid_at          DATETIME(3)  NULL,
   cancelled_at     DATETIME(3)  NULL,
+  pay_expire_at    DATETIME(3)  NULL COMMENT '待支付截止，超时关单 status=40',
   created_at       DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at       DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
   UNIQUE KEY uk_orders_order_no (order_no),
   UNIQUE KEY uk_orders_user_idempotency (user_id, idempotency_key),
   KEY idx_orders_user (user_id),
-  KEY idx_orders_status (status)
+  KEY idx_orders_status (status),
+  KEY idx_orders_pay_expire (status, pay_expire_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS order_items (

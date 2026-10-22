@@ -1,4 +1,4 @@
-﻿# cmd/gateway
+# cmd/gateway
 
 **gateway** 入口：HTTP `:8080`，反代 user / product 并做 JWT 鉴权。
 

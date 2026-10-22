@@ -1,4 +1,4 @@
-﻿# cmd/product
+# cmd/product
 
 **product** 服务入口：HTTP `:8082`，库 `minimall_product`。
 

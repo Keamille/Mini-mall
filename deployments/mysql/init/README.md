@@ -13,9 +13,11 @@
 | `07-payment-schema.sql` | `minimall_payment` | payments, payment_refunds |
 | `08-coupon-schema.sql` | `minimall_coupon` | coupon_templates, user_coupons |
 | `09-notification-schema.sql` | `minimall_notification` | notification_logs |
-| `10-search-schema.sql` | `minimall_search` | product_documents |
+| `10-search-schema.sql` | `minimall_search` | 旧表 `product_documents`。运行中的 search 服务改连 OpenSearch，不再读这个库 |
 
 字段定义对齐 [docs/08-data-models.md](../../../docs/08-data-models.md)；手工 migrate 见 `migrations/<svc>/`。
+
+订单超时关单列 `pay_expire_at`：新库已在 `06-order-schema.sql`；已有库可执行 `migrations/order/000002_pay_expire.up.sql`，或依赖 order 进程启动时的 `EnsureSchema`。
 
 ## 已有数据卷：补建新表（不清空数据）
 

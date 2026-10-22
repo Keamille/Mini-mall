@@ -11,4 +11,4 @@
 | `config/` | 服务配置映射 |
 | `server/` | 依赖组装与生命周期 |
 
-在对应 proto、迁移与服务规格对齐前，不要写入业务逻辑。
+业务代码已在这些目录里。检索引擎在 `adapter/opensearch`（别名 `minimall_products`），没有业务 MySQL。`cmd/search/main.go` 只调用 `server.Run()`。

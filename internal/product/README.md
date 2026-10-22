@@ -1,4 +1,4 @@
-﻿# internal/product
+# internal/product
 
 Private implementation area for **product**. No other service may import this directory.
 
@@ -11,4 +11,4 @@ Private implementation area for **product**. No other service may import this di
 | `config/` | Service configuration mapping |
 | `server/` | Dependency assembly and lifecycle wiring |
 
-Do not add business logic until the relevant proto, migration, and service contract are agreed.
+Service code lives in these directories. `cmd/<service>/main.go` only calls `server.Run()`.
